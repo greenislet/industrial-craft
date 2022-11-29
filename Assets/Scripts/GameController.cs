@@ -12,6 +12,27 @@ namespace AutoCraft
 
     public class GameController : MonoBehaviour
     {
+        [Serializable]
+        public class AuthRequest
+        {
+            public string playerName;
+        }
+
+        [Serializable]
+        public class AuthRecipe
+        {
+            public bool authenticated;
+            public UnityEngine.Vector3 spawnPosition;
+        }
+
+        [Serializable]
+        public class UpdateMessage
+        {
+            public string type;
+            public int id;
+            public UnityEngine.Vector3 vector;
+        }
+
         public enum State
         {
             None,
@@ -69,7 +90,8 @@ namespace AutoCraft
             //var characterController = GameObject.Find("CharacterController");
             //var mainCamera = GameObject.Find("MainCamera");
             //var mainCanvas = GameObject.Find("MainCanvas");
-            //var status = GameObject.Find("Status");
+            GameObject statusGO = GameObject.FindGameObjectWithTag("Status");
+            statusText = statusGO.GetComponent<Text>();
             //SetActiveAllChildren(transform, false);
             //characterController.SetActive(true);
             //mainCamera.SetActive(true);
@@ -93,7 +115,7 @@ namespace AutoCraft
             //    return;
             //}
 
-            //statusText = statusGO.GetComponent<Text>();
+            
             //if (!statusText)
             //{
             //    Debug.LogError("Could not find status text component");
@@ -102,14 +124,14 @@ namespace AutoCraft
 
             webSocket = new WebSocket("ws://localhost:12000");
 
-            //statusText.text = "Connecting...";
+            statusText.text = "Connecting...";
             webSocket.OnOpen += () =>
             {
                 Debug.Log("OPENED");
-                //AuthRequest authRequest = new AuthRequest();
-                //authRequest.playerName = "Player123";
-                //webSocket.SendText(JsonUtility.ToJson(authRequest));
-                //statusText.text = $"Authenticating...";
+                AuthRequest authRequest = new AuthRequest();
+                authRequest.playerName = "Player123";
+                webSocket.SendText(JsonUtility.ToJson(authRequest));
+                statusText.text = "Authenticating...";
                 state = State.Authenticating;
             };
 
@@ -127,18 +149,18 @@ namespace AutoCraft
             {
                 var message = System.Text.Encoding.UTF8.GetString(bytes);
                 Debug.Log("OnMessage! " + message);
-                //if (state == State.Authenticating)
-                //{
-                //    //AuthRecipe authRecipe = JsonUtility.FromJson<AuthRecipe>(message);
-                //    //if (!authRecipe.authenticated)
-                //    //{
-                //    //    statusText.text = "Server refused authentication";
-                //    //    return;
-                //    //}
-                //    //spawnPosition = authRecipe.spawnPosition;
-                //    statusText.text = "";
-                //    state = State.Starting;
-                //}
+                if (state == State.Authenticating)
+                {
+                    AuthRecipe authRecipe = JsonUtility.FromJson<AuthRecipe>(message);
+                    if (!authRecipe.authenticated)
+                    {
+                        statusText.text = "Server refused authentication";
+                        return;
+                    }
+                    spawnPosition = authRecipe.spawnPosition;
+                    statusText.text = "";
+                    state = State.Starting;
+                }
             };
 
 
@@ -149,17 +171,17 @@ namespace AutoCraft
 
         void Update()
         {
-//#if !UNITY_WEBGL || UNITY_EDITOR
-//            webSocket.DispatchMessageQueue();
-//#endif
-//            if (state == State.Starting)
-//            {
-//                SetActiveAllChildren(transform, true);
-//                GameObject.Find("CharacterController").transform.position = spawnPosition;
-//                state = State.Playing;
-//            }
-//            if (state < State.Playing)
-//                return;
+#if !UNITY_WEBGL || UNITY_EDITOR
+            webSocket.DispatchMessageQueue();
+#endif
+            //            if (state == State.Starting)
+            //            {
+            //                SetActiveAllChildren(transform, true);
+            //                GameObject.Find("CharacterController").transform.position = spawnPosition;
+            //                state = State.Playing;
+            //            }
+            //            if (state < State.Playing)
+            //                return;
             //globalMutex.WaitOne();
             //statusText.text = statusStr;
             //globalMutex.ReleaseMutex();
